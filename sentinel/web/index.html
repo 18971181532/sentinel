@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sentinel — Code Security & Quality Dashboard</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="logo">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2">
+      <path d="M12 2L4 6v6c0 5 3.5 9.5 8 10 4.5-.5 8-5 8-10V6l-8-4z"/>
+      <path d="M9 12l2 2 4-4"/>
+    </svg>
+    <span>Sentinel</span>
+  </div>
+  <span class="subtitle">code security &amp; quality dashboard</span>
+  <button id="refreshBtn" class="btn-refresh">↻ Refresh</button>
+</header>
+
+<nav class="tabs">
+  <button class="tab active" data-tab="overview">Overview</button>
+  <button class="tab" data-tab="issues">Issues</button>
+  <button class="tab" data-tab="files">Files</button>
+  <button class="tab" data-tab="security">Security</button>
+  <button class="tab" data-tab="complexity">Complexity</button>
+  <button class="tab" data-tab="duplicates">Duplicates</button>
+  <button class="tab" data-tab="techdebt">Tech Debt</button>
+</nav>
+
+<main>
+  <!-- Overview Tab -->
+  <section id="overview" class="tab-content active">
+    <div class="stats-grid" id="statsGrid"></div>
+    <div class="charts-row">
+      <div class="chart-card">
+        <h3>Issues by Severity</h3>
+        <canvas id="severityChart" width="500" height="300"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Issues by Category</h3>
+        <canvas id="categoryChart" width="500" height="300"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>Top Problem Files</h3>
+      <canvas id="topFilesChart" width="1000" height="350"></canvas>
+    </div>
+  </section>
+
+  <!-- Issues Tab -->
+  <section id="issues" class="tab-content">
+    <div class="filter-bar">
+      <select id="severityFilter">
+        <option value="">All Severities</option>
+        <option value="critical">Critical</option>
+        <option value="high">High</option>
+        <option value="medium">Medium</option>
+        <option value="low">Low</option>
+        <option value="info">Info</option>
+      </select>
+      <input type="text" id="issueSearch" placeholder="Search issues...">
+      <span id="issueCount" class="count-badge"></span>
+    </div>
+    <div class="table-container">
+      <table id="issuesTable">
+        <thead><tr><th>Severity</th><th>Rule</th><th>File</th><th>Line</th><th>Message</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Files Tab -->
+  <section id="files" class="tab-content">
+    <div class="chart-card">
+      <h3>File Risk Bubbles</h3>
+      <canvas id="fileBubblesChart" width="1000" height="450"></canvas>
+    </div>
+    <div class="table-container">
+      <table id="filesTable">
+        <thead><tr><th>File</th><th>Language</th><th>Lines</th><th>Code</th><th>Functions</th><th>Max Complexity</th><th>Issues</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Security Tab -->
+  <section id="security" class="tab-content">
+    <div class="stats-grid" id="securityStats"></div>
+    <div class="chart-card">
+      <h3>Security Issues by Rule</h3>
+      <canvas id="securityRulesChart" width="1000" height="350"></canvas>
+    </div>
+    <div class="table-container">
+      <table id="securityTable">
+        <thead><tr><th>Severity</th><th>Rule</th><th>File</th><th>Line</th><th>Message</th><th>Suggestion</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Complexity Tab -->
+  <section id="complexity" class="tab-content">
+    <div class="stats-grid" id="complexityStats"></div>
+    <div class="charts-row">
+      <div class="chart-card">
+        <h3>Complexity Distribution</h3>
+        <canvas id="complexityDistChart" width="500" height="300"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Lines vs Functions</h3>
+        <canvas id="linesFuncsChart" width="500" height="300"></canvas>
+      </div>
+    </div>
+    <div class="table-container">
+      <table id="complexityTable">
+        <thead><tr><th>File</th><th>Functions</th><th>Max Complexity</th><th>Avg Complexity</th><th>Code Lines</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Duplicates Tab -->
+  <section id="duplicates" class="tab-content">
+    <div class="stats-grid" id="dupStats"></div>
+    <div id="dupList" class="dup-list"></div>
+  </section>
+
+  <!-- Tech Debt Tab -->
+  <section id="techdebt" class="tab-content">
+    <div class="debt-hero" id="debtHero"></div>
+    <div class="charts-row">
+      <div class="chart-card">
+        <h3>Debt by Severity (minutes)</h3>
+        <canvas id="debtSeverityChart" width="500" height="300"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Quality Breakdown</h3>
+        <canvas id="qualityBreakdownChart" width="500" height="300"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>Issue Density Trend (issues per 1000 lines by file)</h3>
+      <canvas id="densityChart" width="1000" height="300"></canvas>
+    </div>
+  </section>
+</main>
+
+<footer>
+  Sentinel — zero-dependency code security &amp; quality scanner · MIT License
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
