@@ -1,18 +1,13 @@
-"""Push sentinel repo to GitHub via Git Data API."""
+"""Push sentinel fix to GitHub via Git Data API."""
 import os, json, base64, urllib.request, subprocess
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 REPO = "18971181532/sentinel"
 LOCAL = r"C:\Users\了\Documents\git\sentinel"
 TOKEN = subprocess.run(["gh", "auth", "token"], capture_output=True, text=True).stdout.strip()
-
 API = "https://api.github.com"
-HEADERS = {
-    "Authorization": f"token {TOKEN}",
-    "Accept": "application/vnd.github+json",
-    "Content-Type": "application/json",
-    "User-Agent": "sentinel-push",
-}
+HEADERS = {"Authorization": f"token {TOKEN}", "Accept": "application/vnd.github+json",
+           "Content-Type": "application/json", "User-Agent": "sentinel-push"}
 
 def api_call(method, path, data=None):
     url = f"{API}{path}"
@@ -21,17 +16,12 @@ def api_call(method, path, data=None):
     with urllib.request.urlopen(req, timeout=30) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
-# Step 0: Initialize empty repo with README
-readme = "# Sentinel\n\nCode security & quality scanner.\n"
-content = base64.b64encode(readme.encode("utf-8")).decode("ascii")
-try:
-    api_call("PUT", f"/repos/{REPO}/contents/README.md",
-             {"message": "chore: init", "content": content})
-    print("Repo initialized")
-except Exception as e:
-    print(f"Init skipped (already exists): {e}")
+# Get current main ref
+ref = api_call("GET", f"/repos/{REPO}/git/refs/heads/main")
+parent_sha = ref["object"]["sha"]
+print(f"Parent: {parent_sha}")
 
-# Collect files - fixed .github handling
+# Collect files
 files = []
 for root, dirs, filenames in os.walk(LOCAL):
     parts = root.split(os.sep)
@@ -44,47 +34,38 @@ for root, dirs, filenames in os.walk(LOCAL):
         full = os.path.join(root, fn)
         rel = os.path.relpath(full, LOCAL).replace("\\", "/")
         files.append((rel, full))
+print(f"Files: {len(files)}")
 
-print(f"Files to push: {len(files)}")
-
-# Create blobs concurrently
+# Create blobs
 def create_blob(item):
     rel, full = item
     with open(full, "rb") as f:
         content = base64.b64encode(f.read()).decode("ascii")
-    result = api_call("POST", f"/repos/{REPO}/git/blobs", {
-        "content": content, "encoding": "base64",
-    })
+    result = api_call("POST", f"/repos/{REPO}/git/blobs", {"content": content, "encoding": "base64"})
     return rel, result["sha"]
 
 blobs = {}
-print("Creating blobs...")
 with ThreadPoolExecutor(max_workers=8) as ex:
     futures = {ex.submit(create_blob, f): f[0] for f in files}
     for fut in as_completed(futures):
         rel, sha = fut.result()
         blobs[rel] = sha
+print("Blobs done")
 
 # Create tree
-tree_entries = [{"path": rel, "mode": "100644", "type": "blob", "sha": sha}
-                for rel, sha in blobs.items()]
-print("Creating tree...")
+tree_entries = [{"path": rel, "mode": "100644", "type": "blob", "sha": sha} for rel, sha in blobs.items()]
 tree = api_call("POST", f"/repos/{REPO}/git/trees", {"tree": tree_entries})
 tree_sha = tree["sha"]
 
-# Create commit
-print("Creating commit...")
+# Create commit with parent
 commit = api_call("POST", f"/repos/{REPO}/git/commits", {
-    "message": "feat: Sentinel - zero-dependency code security & quality scanner",
+    "message": "fix: f-string backslash for Python <3.12 compatibility",
     "tree": tree_sha,
+    "parents": [parent_sha],
     "author": {"name": "遥か", "email": "280000356+18971181532@users.noreply.github.com"},
 })
 commit_sha = commit["sha"]
 
 # Update ref
-print("Updating main ref...")
-ref = api_call("PATCH", f"/repos/{REPO}/git/refs/heads/main", {
-    "sha": commit_sha, "force": True,
-})
-print(f"\nDONE! commit={commit_sha}")
-print(f"https://github.com/18971181532/sentinel")
+api_call("PATCH", f"/repos/{REPO}/git/refs/heads/main", {"sha": commit_sha, "force": True})
+print(f"DONE! commit={commit_sha}")

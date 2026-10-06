@@ -133,11 +133,12 @@ class VariableNamingRule(Rule):
         for node in ast.walk(tree):
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 if camel.match(node.name) and not node.name.startswith("test"):
+                    snake_name = re.sub(r'([A-Z])', r'_\1', node.name).lower()
                     issues.append(self.make_issue(
                         f"Function name '{node.name}' should be snake_case",
                         file_path, line=node.lineno,
                         snippet=f"def {node.name}(...):",
-                        suggestion=f"Rename to '{re.sub(r'([A-Z])', r'_\\1', node.name).lower()}'",
+                        suggestion=f"Rename to '{snake_name}'",
                         confidence=0.6,
                     ))
         return issues
